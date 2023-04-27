@@ -1,3 +1,6 @@
 node_modules
+dist
 images
 users.txt
+users.csv
+users.pdf
