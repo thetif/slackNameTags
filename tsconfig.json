@@ -13,5 +13,5 @@
     "declaration": true,
     "forceConsistentCasingInFileNames": true
   },
-  "exclude": ["./node_modules"]
+  "exclude": ["./node_modules", "src/mocks", "jest.setup.ts", "jest.config.ts"]
 }

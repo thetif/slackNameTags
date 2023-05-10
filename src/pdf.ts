@@ -1,14 +1,8 @@
-import PDFDocument, { text } from "pdfkit";
+import PDFDocument from "pdfkit";
 import { createWriteStream } from "fs";
-import path from "path";
 
 import { NameTagInfo, PDFConfigs } from "name-tag";
 import { getTemplateByName } from "./constants.js";
-
-const __dirname = path.resolve();
-const pdfConfigs = {};
-
-const SLACK_ICON = `${__dirname}/dist/images/slack_icon.png`;
 
 function getFontSizeToFit(
   doc: PDFKit.PDFDocument,
@@ -19,24 +13,19 @@ function getFontSizeToFit(
 ) {
   doc.font(font).fontSize(idealSize);
   const realWidth = doc.widthOfString(text);
-  if (realWidth <= width) return idealSize;
-  return (idealSize * width) / realWidth;
-}
-
-function getLineHeight(
-  doc: PDFKit.PDFDocument,
-  text: string,
-  textWidth: number
-): number {
-  const width = doc.widthOfString(text);
-  const lines = Math.ceil(width / textWidth);
-  return doc.currentLineHeight() * lines;
+  const neededSize = (idealSize * width) / realWidth;
+  if (idealSize * 0.9 < neededSize && neededSize < idealSize) return neededSize;
+  return idealSize;
 }
 
 export async function createPDF(
   tags: NameTagInfo[],
+  pdfName: string,
+  watermark: string,
   {
     templateName,
+    textPadding,
+    baseFontSize,
     regularFont,
     boldFont,
     altFont = regularFont,
@@ -55,16 +44,14 @@ export async function createPDF(
       LABEL_HEIGHT,
       X_STRIDE,
       Y_STRIDE,
-      TOP_PAD,
       ROUNDED,
       PADDING,
-      WASTE,
       SHOW_OUTLINE,
     } = template;
 
     // create PDF
-    const doc = new PDFDocument(pdfConfigs);
-    doc.pipe(createWriteStream(`${__dirname}/users.pdf`)); // write to PDF
+    const doc = new PDFDocument();
+    doc.pipe(createWriteStream(pdfName)); // write to PDF
 
     tags.map((tag, i) => {
       if (i != 0 && i % (COLS * ROWS) == 0) {
@@ -74,7 +61,7 @@ export async function createPDF(
 
       const row = ((i / COLS) | 0) % ROWS;
       const col = i % COLS;
-      const { avatar, name, username, pronouns, title, herd, teams } = tag;
+      const { avatar, name, username, pronouns, optionalFields } = tag;
 
       const BASE_LEFT = LEFT_MARGIN + X_STRIDE * col;
       const BASE_TOP = TOP_MARGIN + Y_STRIDE * row;
@@ -87,97 +74,112 @@ export async function createPDF(
         doc.roundedRect(left, top, LABEL_WIDTH, LABEL_HEIGHT, ROUNDED).stroke();
       }
 
+      // add padding before adding anything to tag
+      left += PADDING; // add a little padding to the left
+      top += PADDING; // add a little padding to the top
+
       // Add avatar image to the tag
-      left += PADDING; // add a little padding to the left of the image
-      top += PADDING; // add a little padding to the top of the image
-      const imageSize = LABEL_WIDTH / 3 - PADDING - PADDING; // set image to 1/3 label width minus padding
-      doc.image(avatar, left, top, {
-        fit: [imageSize, imageSize], // slack uses square images
-      });
-      doc.image(SLACK_ICON, left + imageSize - 10, top + imageSize - 10, {
-        fit: [15, 15],
-      });
+      // set image to 1/3 label width minus padding on either side
+      const imageSize = (LABEL_WIDTH - PADDING - PADDING) / 3;
+      if (avatar) {
+        doc.image(avatar, left, top, {
+          fit: [imageSize, imageSize], // slack uses square images
+        });
+      }
 
-      const textWidth = LABEL_WIDTH - imageSize - PADDING - PADDING; // text width should be the width of the label minus image width and padding
+      if (watermark) {
+        // Add watermark to avatar
+        doc.image(
+          watermark,
+          left + imageSize - imageSize / 5,
+          top + imageSize - imageSize / 5,
+          {
+            fit: [imageSize / 3, imageSize / 3],
+          }
+        );
+      }
 
+      // Add text
+      // text width should be the width of the label minus image width and padding
+      const textWidth = LABEL_WIDTH - PADDING - PADDING - imageSize - PADDING;
       const textOptions = {
         align: "left",
         width: textWidth,
       };
-      left = BASE_LEFT + imageSize + PADDING + PADDING; // reset left to the right side of the image
+      left += imageSize + PADDING; // set left to the right of the image with padding
 
       // Add name
       doc
         .font(boldFont)
-        .fontSize(getFontSizeToFit(doc, name, boldFont, 12, textWidth))
+        .fontSize(
+          getFontSizeToFit(doc, name, boldFont, baseFontSize * 1.5, textWidth)
+        )
         .fillColor("#5c3977")
         .text(name, left, top, {
           ...textOptions,
-          height: LABEL_HEIGHT - (top - BASE_TOP),
-        })
-        .moveDown(0.25);
-      // top += doc.currentLineHeight() + TOP_PAD; // set top to where the name ends
+          height: LABEL_HEIGHT - (top - BASE_TOP) - PADDING,
+        });
+      top += textPadding + doc.heightOfString(name, { width: textWidth });
 
       // Add username
       doc
         .font(altFont)
-        .fontSize(getFontSizeToFit(doc, username, altFont, 10, textWidth))
+        .fontSize(
+          getFontSizeToFit(
+            doc,
+            username,
+            altFont,
+            baseFontSize * 1.2,
+            textWidth
+          )
+        )
         .fillColor("#ee5340")
-        .text(username, {
+        .text(username, left, top, {
           ...textOptions,
-          height: LABEL_HEIGHT - (top - BASE_TOP),
-        })
-        .moveDown(0.5);
+          height: LABEL_HEIGHT - (top - BASE_TOP) - PADDING,
+        });
+      top += textPadding + doc.heightOfString(username, { width: textWidth }); // move top down half a line plus the line height
 
       // Add pronouns
       if (pronouns) {
         doc
-          .font(regularFont)
-          .fontSize(10)
+          .font(italicFont)
+          .fontSize(
+            getFontSizeToFit(doc, pronouns, italicFont, baseFontSize, textWidth)
+          )
           .fillColor("#000")
-          .text(pronouns, {
+          .text(pronouns, left, top, {
             ...textOptions,
-            height: LABEL_HEIGHT - (top - BASE_TOP),
-          })
-          .moveDown(0.5);
-      }
-
-      // Add title
-      if (title) {
-        doc
-          .font(regularFont)
-          .fontSize(10)
-          .fillColor("#000")
-          .text(title, {
-            ...textOptions,
-            height: LABEL_HEIGHT - (top - BASE_TOP),
-          })
-          .moveDown(0.5);
-      }
-
-      // Add herd
-      if (herd) {
-        doc
-          .font(regularFont)
-          .fontSize(10)
-          .fillColor("#000")
-          .text(herd, {
-            ...textOptions,
-            height: LABEL_HEIGHT - (top - BASE_TOP),
-          })
-          .moveDown(0.5);
-      }
-
-      // Add teams
-      if (teams) {
-        doc
-          .font(regularFont)
-          .fontSize(10)
-          .fillColor("#000")
-          .text(teams, {
-            ...textOptions,
-            height: LABEL_HEIGHT - (top - BASE_TOP),
+            height: LABEL_HEIGHT - (top - BASE_TOP) - PADDING,
           });
+        top += textPadding + doc.heightOfString(pronouns, { width: textWidth }); // move top down half a line plus the line height
+      }
+
+      if (optionalFields) {
+        for (const [key, text] of Object.entries(optionalFields)) {
+          const lineHeight = doc.heightOfString(text, { width: textWidth });
+          const heightLeft = LABEL_HEIGHT - (top - BASE_TOP) - PADDING;
+          if (lineHeight < heightLeft) {
+            doc
+              .font(regularFont)
+              .fontSize(
+                getFontSizeToFit(
+                  doc,
+                  text,
+                  regularFont,
+                  baseFontSize,
+                  textWidth
+                )
+              )
+              .fillColor("#000")
+              .text(text, left, top, {
+                ...textOptions,
+                height: heightLeft,
+              });
+            // .moveDown(0.5);
+            top += textPadding + lineHeight; // move top down half a line plus the line height
+          }
+        }
       }
     });
 

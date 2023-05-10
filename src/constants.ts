@@ -23,9 +23,8 @@ export const avery5395: ReadonlyTemplate = {
   LABEL_HEIGHT: 2.333333333 * 72, // height
   X_STRIDE: 3.75 * 72, // dx
   Y_STRIDE: 2.5 * 72, // dy
-  TOP_PAD: 3,
   ROUNDED: 0.1875 * 72, // round
-  PADDING: 20,
+  PADDING: 15,
   WASTE: 0.0625 * 72, // waste
   SHOW_OUTLINE: true,
 };

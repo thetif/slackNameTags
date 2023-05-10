@@ -1,7 +1,5 @@
 import { createReadStream } from "fs";
 import { parse } from "csv-parse";
-import http from "http";
-import https from "https";
 
 /**
  * Open file of users and return a list of email addresses
@@ -9,7 +7,7 @@ import https from "https";
  * @return {Promise<string[]>} The list of emails from the file
  */
 export async function getUserEmailList(filename: string): Promise<string[]> {
-  const users: string[] = [];
+  const emails: string[] = [];
   let index = -1;
 
   return new Promise(function (resolve, reject) {
@@ -18,19 +16,15 @@ export async function getUserEmailList(filename: string): Promise<string[]> {
       .on("data", function (row: string[]) {
         if (index === -1) {
           // find the index of the column with the email addresses
-          index = row.findIndex((element: string) => element.match(/@fear*/));
+          index = row.findIndex((element: string) =>
+            element.match(/@.+\.(tech|com)/)
+          );
         }
 
-        // Slack expects the email to end in fearless.tech not fearsol.com so replace it
-        const email =
-          row[index]?.replace("@fearsol.com", "@fearless.tech") ?? "";
-        // add emails to list only if they end in @fearless.tech, ignore none Fearless users
-        if (email.match(/@fearless.tech/)) {
-          users.push(email);
-        }
+        emails.push(row[index]?.trim());
       })
       .on("end", function () {
-        resolve(users);
+        resolve(emails);
       })
       .on("error", function (error) {
         reject(error);

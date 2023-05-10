@@ -1,13 +1,21 @@
 declare module "name-tag" {
-  export interface NameTagInfo {
+  export type SlackConfigs = {
+    pronounsKey: string;
+    keys: {
+      [key: string]: string;
+    };
+    imageSize: 24 | 32 | 48 | 72 | 192 | 512 | 1024;
+  };
+
+  export type NameTagInfo = {
     name: string;
     username: string;
     avatar: string;
-    title: string;
-    herd: string;
     pronouns: string;
-    teams: string;
-  }
+    optionalFields?: {
+      [key: string]: string;
+    };
+  };
 
   type Template = {
     COLS: number;
@@ -18,7 +26,6 @@ declare module "name-tag" {
     LABEL_HEIGHT: number;
     X_STRIDE: number;
     Y_STRIDE: number;
-    TOP_PAD: number;
     PADDING: number;
     ROUNDED: number;
     WASTE: number;
@@ -29,6 +36,8 @@ declare module "name-tag" {
 
   export type PDFConfigs = {
     templateName: string;
+    baseFontSize: number;
+    textPadding: number;
     regularFont: string;
     boldFont: string;
     altFont?: string;
