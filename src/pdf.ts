@@ -1,8 +1,9 @@
+// based on https://github.com/adlr/cards/blob/master/labels.js
+
 import PDFDocument from "pdfkit";
 import { createWriteStream } from "fs";
 
 import { NameTagInfo, PDFConfigs } from "name-tag";
-import { getTemplateByName } from "./constants.js";
 
 function getFontSizeToFit(
   doc: PDFKit.PDFDocument,
@@ -23,7 +24,7 @@ export async function createPDF(
   pdfName: string,
   watermark: string,
   {
-    templateName,
+    template,
     textPadding,
     baseFontSize,
     regularFont,
@@ -32,8 +33,6 @@ export async function createPDF(
     italicFont = regularFont,
   }: PDFConfigs
 ) {
-  const template = getTemplateByName(templateName);
-
   if (tags.length > 0 && template) {
     const {
       ROWS,
@@ -61,7 +60,12 @@ export async function createPDF(
 
       const row = ((i / COLS) | 0) % ROWS;
       const col = i % COLS;
-      const { avatar, name, username, pronouns, optionalFields } = tag;
+      const {
+        avatar,
+        name,
+        username,
+        optionalFields: { pronouns, ...optionalFields } = {},
+      } = tag;
 
       const BASE_LEFT = LEFT_MARGIN + X_STRIDE * col;
       const BASE_TOP = TOP_MARGIN + Y_STRIDE * row;
@@ -176,7 +180,6 @@ export async function createPDF(
                 ...textOptions,
                 height: heightLeft,
               });
-            // .moveDown(0.5);
             top += textPadding + lineHeight; // move top down half a line plus the line height
           }
         }

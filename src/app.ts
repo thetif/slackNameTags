@@ -3,31 +3,27 @@ import path from "path";
 import { getUserEmailList } from "./csv.js";
 import { getNameTagInfo } from "./slack.js";
 import { createPDF } from "./pdf.js";
+import { avery5395 } from "./templates.js";
 
 const __dirname = path.resolve();
 
-const TITLE_FIELD = "Xf023PKJBJ5D";
-const HERD_FIELD = "XfGRTTEU1M";
-const PRONOUN_FIELD = "XfRKMG1UDT";
-const TEAM_FIELD = "XfGQ3TAKEU";
-const IMAGE_SIZE = 192;
 const SLACK_ICON = `${__dirname}/dist/images/slack_icon.png`;
 
-(async () => {
+async function generatePDF() {
   const emails = await getUserEmailList("./users.txt");
 
   const tags = await getNameTagInfo(emails, {
     keys: {
-      title: TITLE_FIELD,
-      herd: HERD_FIELD,
-      teams: TEAM_FIELD,
+      pronouns: "XfRKMG1UDT",
+      title: "Xf023PKJBJ5D",
+      herd: "XfGRTTEU1M",
+      teams: "XfGQ3TAKEU",
     },
-    pronounsKey: PRONOUN_FIELD,
-    imageSize: IMAGE_SIZE,
+    imageSize: 192,
   });
 
   await createPDF(tags, `${__dirname}/users.pdf`, SLACK_ICON, {
-    templateName: "avery5395",
+    template: avery5395,
     textPadding: 5,
     baseFontSize: 10,
     regularFont: "./fonts/Montserrat-Regular.ttf",
@@ -35,4 +31,8 @@ const SLACK_ICON = `${__dirname}/dist/images/slack_icon.png`;
     altFont: "./fonts/MontserratAlternates-Bold.ttf",
     italicFont: "./fonts/Montserrat-Italic.ttf",
   });
+}
+
+(async () => {
+  await generatePDF();
 })();

@@ -241,8 +241,8 @@ describe("Slack", () => {
   describe("getUserProfile", () => {
     it("should get user profile with all optional fields", async () => {
       const profile = await getUserProfile("B23CD4EFG", {
-        pronounsKey: PRONOUN_FIELD,
         keys: {
+          pronouns: PRONOUN_FIELD,
           title: TITLE_FIELD,
           herd: HERD_FIELD,
           teams: TEAM_FIELD,
@@ -254,9 +254,9 @@ describe("Slack", () => {
       expect(profile).toEqual({
         real_name_normalized: "Dallas Konopelski (He/Him)",
         display_name_normalized: "dkonopelski",
-        pronouns: "He/Him",
         imageUrl: "https://avatars.slack-edge.com/B23CD4EFG_192.jpg",
         optionalFields: {
+          pronouns: "He/Him",
           title: "Test Engineer",
           herd: "Engineer Herd",
           teams: "A Team",
@@ -268,8 +268,8 @@ describe("Slack", () => {
 
     it("should get user profile with title, herd, and teams", async () => {
       const profile = await getUserProfile("A12BC3DEF", {
-        pronounsKey: PRONOUN_FIELD,
         keys: {
+          pronouns: PRONOUN_FIELD,
           title: TITLE_FIELD,
           herd: HERD_FIELD,
           teams: TEAM_FIELD,
@@ -279,9 +279,9 @@ describe("Slack", () => {
       expect(profile).toEqual({
         real_name_normalized: "Dominick Osinski",
         display_name_normalized: "dosinski",
-        pronouns: "He/Him",
         imageUrl: "https://avatars.slack-edge.com/A12BC3DEF_192.jpg",
         optionalFields: {
+          pronouns: "He/Him",
           title: "Software Engineer",
           herd: "Engineer Herd",
           teams: "A Team",
@@ -291,8 +291,8 @@ describe("Slack", () => {
 
     it("should get handle profile missing optional fields", async () => {
       const profile = await getUserProfile("E56FG7HIJ", {
-        pronounsKey: PRONOUN_FIELD,
         keys: {
+          pronouns: PRONOUN_FIELD,
           title: TITLE_FIELD,
           coi: COI_FIELD,
           quote: QUOTE_FIELD,
@@ -302,9 +302,9 @@ describe("Slack", () => {
       expect(profile).toEqual({
         real_name_normalized: "Tracy McCullough (She/Her)",
         display_name_normalized: "tmccullough",
-        pronouns: "",
         imageUrl: "https://avatars.slack-edge.com/E56FG7HIJ_192.jpg",
         optionalFields: {
+          pronouns: "",
           title: "Operations Assistant",
           coi: "",
           quote: "",
@@ -314,8 +314,8 @@ describe("Slack", () => {
 
     it("should handle not finding profile", async () => {
       const profile = await getUserProfile("Z56FG7HIJ", {
-        pronounsKey: PRONOUN_FIELD,
         keys: {
+          pronouns: PRONOUN_FIELD,
           title: TITLE_FIELD,
           coi: COI_FIELD,
           quote: QUOTE_FIELD,
@@ -328,8 +328,8 @@ describe("Slack", () => {
 
   describe("getUserInfo", () => {
     const configs: SlackConfigs = {
-      pronounsKey: PRONOUN_FIELD,
       keys: {
+        pronouns: PRONOUN_FIELD,
         title: TITLE_FIELD,
         herd: HERD_FIELD,
         teams: TEAM_FIELD,
@@ -343,8 +343,8 @@ describe("Slack", () => {
         name: "May Pollich",
         username: "@mpollich",
         avatar: `${currentDirectory}/dist/images/F67GH8IJK_192.png`,
-        pronouns: "she/her",
         optionalFields: {
+          pronouns: "she/her",
           title: "Operations Manager",
           herd: "",
           teams: "",
@@ -358,8 +358,8 @@ describe("Slack", () => {
         name: "Angelica Morar",
         username: "@amorar",
         avatar: `${currentDirectory}/dist/images/J01KL2MNO_192.png`,
-        pronouns: "she/her",
         optionalFields: {
+          pronouns: "she/her",
           title: "Software Engineer",
           herd: "",
           teams: "",
@@ -373,8 +373,8 @@ describe("Slack", () => {
         name: "Tracy McCullough",
         username: "@tmccullough",
         avatar: `${currentDirectory}/dist/images/E56FG7HIJ_192.png`,
-        pronouns: "she/her",
         optionalFields: {
+          pronouns: "she/her",
           title: "Operations Assistant",
           herd: "",
           teams: "",
@@ -395,8 +395,8 @@ describe("Slack", () => {
 
   describe("getNameTagInfo", () => {
     const configs: SlackConfigs = {
-      pronounsKey: PRONOUN_FIELD,
       keys: {
+        pronouns: PRONOUN_FIELD,
         title: TITLE_FIELD,
         herd: HERD_FIELD,
         teams: TEAM_FIELD,
@@ -418,8 +418,8 @@ describe("Slack", () => {
           name: "May Pollich",
           username: "@mpollich",
           avatar: `${currentDirectory}/dist/images/F67GH8IJK_192.png`,
-          pronouns: "she/her",
           optionalFields: {
+            pronouns: "she/her",
             title: "Operations Manager",
             herd: "",
             teams: "",
@@ -429,8 +429,8 @@ describe("Slack", () => {
           name: "Angelica Morar",
           username: "@amorar",
           avatar: `${currentDirectory}/dist/images/J01KL2MNO_192.png`,
-          pronouns: "she/her",
           optionalFields: {
+            pronouns: "she/her",
             title: "Software Engineer",
             herd: "",
             teams: "",
@@ -440,8 +440,8 @@ describe("Slack", () => {
           name: "Tracy McCullough",
           username: "@tmccullough",
           avatar: `${currentDirectory}/dist/images/E56FG7HIJ_192.png`,
-          pronouns: "she/her",
           optionalFields: {
+            pronouns: "she/her",
             title: "Operations Assistant",
             herd: "",
             teams: "",
@@ -466,8 +466,8 @@ describe("Slack", () => {
           name: "May Pollich",
           username: "@mpollich",
           avatar: `${currentDirectory}/dist/images/F67GH8IJK_192.png`,
-          pronouns: "she/her",
           optionalFields: {
+            pronouns: "she/her",
             title: "Operations Manager",
             herd: "",
             teams: "",
@@ -477,8 +477,8 @@ describe("Slack", () => {
           name: "Angelica Morar",
           username: "@amorar",
           avatar: `${currentDirectory}/dist/images/J01KL2MNO_192.png`,
-          pronouns: "she/her",
           optionalFields: {
+            pronouns: "she/her",
             title: "Software Engineer",
             herd: "",
             teams: "",
@@ -488,8 +488,8 @@ describe("Slack", () => {
           name: "Tracy McCullough",
           username: "@tmccullough",
           avatar: `${currentDirectory}/dist/images/E56FG7HIJ_192.png`,
-          pronouns: "she/her",
           optionalFields: {
+            pronouns: "she/her",
             title: "Operations Assistant",
             herd: "",
             teams: "",

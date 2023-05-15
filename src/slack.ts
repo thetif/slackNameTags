@@ -14,8 +14,7 @@ const DEFAULT_IMAGE_SIZE = 192;
 type SlackProfile = {
   real_name_normalized: string;
   display_name_normalized: string;
-  pronouns: string;
-  optionalFields?: { [key: string]: string };
+  optionalFields?: { pronouns: string; [key: string]: string };
   imageUrl: string;
 };
 
@@ -272,7 +271,7 @@ export function getImageUrl(
  */
 export async function getUserProfile(
   userId: string,
-  { pronounsKey, keys, imageSize }: SlackConfigs
+  { keys, imageSize }: SlackConfigs
 ): Promise<SlackProfile | null> {
   try {
     // if the user was found and they have an id, retrieve their profile
@@ -294,12 +293,16 @@ export async function getUserProfile(
         optionalFields[key] = fields?.[value]?.value || "";
       }
 
+      const { pronouns, ...otherFields } = optionalFields;
+
       return {
         real_name_normalized: real_name_normalized,
         display_name_normalized: display_name_normalized,
-        pronouns: fields?.[pronounsKey]?.value || "",
         imageUrl: getImageUrl(profile, imageSize),
-        optionalFields,
+        optionalFields: {
+          pronouns,
+          ...otherFields,
+        },
       };
     }
     return null;
@@ -329,9 +332,8 @@ export async function getUserInfo(
       const {
         real_name_normalized,
         display_name_normalized,
-        pronouns,
         imageUrl,
-        optionalFields,
+        optionalFields: { pronouns, ...optionalFields } = {},
       } = profileInfo;
 
       // Normalize the name (remove text that isn't the name)
@@ -362,9 +364,11 @@ export async function getUserInfo(
       const tag: NameTagInfo = {
         name: normalizedName,
         username: normalizedUsername ? `@${normalizedUsername}` : "",
-        pronouns: derivedPronouns,
         avatar,
-        optionalFields,
+        optionalFields: {
+          pronouns: derivedPronouns,
+          ...optionalFields,
+        },
       };
 
       return tag;

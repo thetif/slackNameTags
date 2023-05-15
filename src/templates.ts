@@ -28,10 +28,3 @@ export const avery5395: ReadonlyTemplate = {
   WASTE: 0.0625 * 72, // waste
   SHOW_OUTLINE: true,
 };
-
-export function getTemplateByName(name: string): ReadonlyTemplate | null {
-  if (name === "avery5395") {
-    return avery5395;
-  }
-  return null;
-}

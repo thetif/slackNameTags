@@ -1,7 +1,7 @@
 declare module "name-tag" {
   export type SlackConfigs = {
-    pronounsKey: string;
     keys: {
+      pronouns: string;
       [key: string]: string;
     };
     imageSize: 24 | 32 | 48 | 72 | 192 | 512 | 1024;
@@ -11,8 +11,8 @@ declare module "name-tag" {
     name: string;
     username: string;
     avatar: string;
-    pronouns: string;
     optionalFields?: {
+      pronouns: string;
       [key: string]: string;
     };
   };
@@ -35,7 +35,7 @@ declare module "name-tag" {
   export type ReadonlyTemplate = Readonly<Template>;
 
   export type PDFConfigs = {
-    templateName: string;
+    template: ReadonlyTemplate;
     baseFontSize: number;
     textPadding: number;
     regularFont: string;
