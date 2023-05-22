@@ -26,5 +26,5 @@ export const avery5395: ReadonlyTemplate = {
   ROUNDED: 0.1875 * 72, // round
   PADDING: 15,
   WASTE: 0.0625 * 72, // waste
-  SHOW_OUTLINE: true,
+  SHOW_OUTLINE: false,
 };

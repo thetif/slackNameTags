@@ -4,6 +4,7 @@ import * as fs from "fs";
 
 const currentDirectory = path.resolve();
 
+// Mock the endpoint for the slack avatars
 export const imageHandler = rest.get(
   "https://avatars.slack-edge.com/*",
   async (_, res, ctx) => {

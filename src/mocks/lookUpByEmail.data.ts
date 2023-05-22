@@ -5,6 +5,7 @@ export interface SlackUser {
   };
 }
 
+// Look up data for the mocked version of lookupByEmail
 export const userByEmail: Record<string, SlackUser> = {
   "dosinski@fearless.tech": {
     id: "A12BC3DEF",

@@ -15,6 +15,9 @@ interface LookUpByEmailResponseBodyError {
   error: string;
 }
 
+/**
+ * Mock the endpoint for looking up users by email in slack
+ */
 export const lookupHandler = rest.post<
   LookUpByEmailRequestBody,
   LookUpByEmailRequestBody,
@@ -24,6 +27,8 @@ export const lookupHandler = rest.post<
   const decoder = new TextDecoder().decode(data);
   const [key, value] = decoder.split("=");
   const email = decodeURIComponent(value);
+
+  // look up the user in the mocked data
   const user = userByEmail[email];
 
   if (!user) {

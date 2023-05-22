@@ -7,8 +7,7 @@ import { v4 as uuidv4 } from "uuid";
 import { NameTagInfo, SlackConfigs } from "name-tag";
 
 const currentDirectory = path.resolve();
-const token = process.env.SLACK_USER_TOKEN;
-const web = new WebClient(token);
+const web = new WebClient(process.env.SLACK_USER_TOKEN);
 const DEFAULT_IMAGE_SIZE = 192;
 
 type SlackProfile = {
@@ -21,7 +20,7 @@ type SlackProfile = {
 /**
  * Finds the filename in the url
  * @param url The url of the image to get the filename from
- * @returns The filename
+ * @returns The filename from the url or a random uuid
  */
 export function getFilenameByUrl(url: string): [string, string] {
   const urlParts = decodeURI(url) // remove any URI encoding
@@ -53,11 +52,16 @@ export function getFilenameByUrl(url: string): [string, string] {
  */
 export async function getImageBuffer(url: string): Promise<Buffer | null> {
   try {
+    // fetch the image and follow a redirect, if necessary
     const response = await fetch(url, { redirect: "follow" });
+    // if the response is successful, return the image as a Buffer
     if (response.status >= 200 && response.status < 300) {
+      // Get the blob from the response
       const blob = await response?.blob();
+      // Get the array buffer from the blob
       const arrayBuffer = await blob?.arrayBuffer();
       if (arrayBuffer) {
+        // return the array buffer as a Buffer
         return Buffer.from(arrayBuffer);
       }
     }
@@ -68,8 +72,8 @@ export async function getImageBuffer(url: string): Promise<Buffer | null> {
 }
 
 /**
- * Converts the image buffer to a png, resizes
- * the image and rounds the corner
+ * Converts the image buffer to a png, resizes the image, lightens them slightly,
+ * and rounds the corners
  * @param buffer The Buffer of the downloaded image
  * @param filename The filename of the file that will be written
  * @param imageSize The desired size of the image
@@ -92,6 +96,7 @@ export async function convertImage(
       sharp(buffer)
         .resize(imageSize, imageSize) // resize image to desired size, slack uses square images
         .composite([{ input: roundedCorners, blend: "dest-in" }]) // round the corners
+        .modulate({ brightness: 1.1, saturation: 0.9 }) // lighten the image slightly to account for printing
         .png() // convert to png, must be a png to have rounded corners
         .toBuffer() ?? null
     ); // if sharp can't convert the image, then use the original buffer
@@ -107,12 +112,13 @@ export async function convertImage(
  * Saves the image to the local directory
  * @param filename The filename of the image
  * @param buffer The Buffer of the image
+ * @param extension The extension of the image
  * @returns The filepath of the saved image
  */
 export async function writeImage(
   filename: string,
   buffer: Buffer,
-  extension: string
+  extension: string = "png"
 ): Promise<string> {
   const filepath = `${currentDirectory}/dist/images/${filename}.${extension}`;
   try {
@@ -137,16 +143,21 @@ export async function downloadImage(
   url: string,
   imageSize: number = DEFAULT_IMAGE_SIZE // use the default size if not specified
 ): Promise<string> {
+  // get the filename and extension from the url
   const [filename, extension] = getFilenameByUrl(url);
 
   if (filename) {
+    // if the filename was found, download the image
     const buffer = await getImageBuffer(url);
 
     if (buffer) {
+      // if the image was downloaded, convert it to png, resize it, and round the corners
       const roundedBuffer = await convertImage(buffer, filename, imageSize);
       if (roundedBuffer) {
+        // if the image was converted, save it to the local directory
         return writeImage(filename, roundedBuffer, "png");
       }
+      // if the image was downloaded, but not converted, save it to the local directory
       return writeImage(filename, buffer, extension);
     }
   }
@@ -158,7 +169,7 @@ export async function downloadImage(
 /**
  * Takes in a name string and checks for pronouns being in the name.
  * If there are pronouns in the name, remove them and return the name
- * stripped of everything but the name and also return the pronouns if found.
+ * stripped of everything else and also return the pronouns if found.
  * @param name The name to normalize
  * @returns [string, string] The normalized name and the pronouns found
  */
@@ -188,7 +199,9 @@ export function normalizeName(name: string | null): [string, string] {
 }
 
 /**
- * Finds the user id by their email address
+ * Finds the user id by their email address. If the user is not found
+ * by the given email address, it will try replacing the domain
+ * from fearless.tech to fearsol.com or vice versa.
  * @param email The email address of the user to find
  * @returns The user id of the user
  */
@@ -264,10 +277,10 @@ export function getImageUrl(
 }
 
 /**
- *
+ * Retrieves the user's profile from Slack
  * @param userId The id of the user
  * @param configs The specific
- * @returns
+ * @returns The profile for the user
  */
 export async function getUserProfile(
   userId: string,
@@ -284,23 +297,28 @@ export async function getUserProfile(
       const {
         real_name_normalized = "",
         display_name_normalized = "",
-        fields,
+        fields = {},
       } = profile.profile;
 
+      // Process the optional fields, saving the values for the
+      // keys that were passed in
       const optionalFields: { [key: string]: string } = {};
-
-      for (const [key, value] of Object.entries(keys)) {
-        optionalFields[key] = fields?.[value]?.value || "";
+      if (fields) {
+        for (const [key, value] of Object.entries(keys)) {
+          optionalFields[key] = fields?.[value]?.value?.trim() || "";
+        }
       }
 
-      const { pronouns, ...otherFields } = optionalFields;
+      // Pull pronouns out of optionalFields, because TypeScript expects it to be named
+      const { pronouns = "", ...otherFields } = optionalFields;
 
+      // return the profile information in the expected format
       return {
         real_name_normalized: real_name_normalized,
         display_name_normalized: display_name_normalized,
         imageUrl: getImageUrl(profile, imageSize),
         optionalFields: {
-          pronouns,
+          pronouns: pronouns?.trim(),
           ...otherFields,
         },
       };
@@ -315,6 +333,7 @@ export async function getUserProfile(
 /**
  * Retrieves the user's information from Slack
  * @param {string} email The email address to look up
+ * @param {SlackConfigs} configs The specific configurations for retrieving the user's information
  * @returns {Promise<NameTagInfo | null>} The user's information in NameTagInfo format
  */
 export async function getUserInfo(
@@ -333,7 +352,7 @@ export async function getUserInfo(
         real_name_normalized,
         display_name_normalized,
         imageUrl,
-        optionalFields: { pronouns, ...optionalFields } = {},
+        optionalFields: { pronouns = "", ...optionalFields } = {},
       } = profileInfo;
 
       // Normalize the name (remove text that isn't the name)
@@ -347,14 +366,22 @@ export async function getUserInfo(
         display_name_normalized
       );
 
+      // Just in case the user hasn't created a username, default to their display name
+      const username = normalizedUsername || normalizedName;
+
       // derive the pronouns from all of the places they might be set
       // the pronouns field, the name, or the username
       let derivedPronouns = pronouns || namePronouns || usernamePronouns || "";
       if (derivedPronouns) {
-        const [object, subject] = derivedPronouns.split("/");
-        if (object && subject) {
-          derivedPronouns = `${object?.toLowerCase()}/${subject?.toLowerCase()}`;
-        }
+        // remove paranthesis from the pronouns
+        const terms = derivedPronouns
+          .replace("(", "")
+          .replace(")", "")
+          .split("/");
+        derivedPronouns = terms
+          ?.map((term) => term?.toLowerCase())
+          ?.join("/")
+          ?.trim();
       }
 
       // download the image to the local drive and get the path to it
@@ -363,7 +390,7 @@ export async function getUserInfo(
 
       const tag: NameTagInfo = {
         name: normalizedName,
-        username: normalizedUsername ? `@${normalizedUsername}` : "",
+        username: username ? `@${username}` : "",
         avatar,
         optionalFields: {
           pronouns: derivedPronouns,
@@ -383,6 +410,7 @@ export async function getUserInfo(
 /**
  * Retrieve the NameTagInfo for users in the file
  * @param filename The name of the file to retrieve users from
+ * @param configs The specific configurations for retrieving the user's information
  * @returns {Promise<NameTagInfo[]>} The array of NameTagInfo from the users in the file
  */
 export async function getNameTagInfo(

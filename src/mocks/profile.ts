@@ -15,6 +15,9 @@ interface ProfileResponseBodyError {
   error: string;
 }
 
+/**
+ * Mock the endpoint for looking up profiles by user id in slack
+ */
 export const profileHandler = rest.post<
   ProfileRequestBody,
   ProfileRequestBody,
@@ -24,6 +27,8 @@ export const profileHandler = rest.post<
   const decoder = new TextDecoder().decode(data);
   const [key, value] = decoder.split("=");
   const user = decodeURIComponent(value);
+
+  // look for the user in the mocked data
   const profile = profileByUser[user];
 
   if (!profile) {
